@@ -1,4 +1,5 @@
 /* @license
+
 Papa Parse
 v5.3.1
 https://github.com/mholt/PapaParse
@@ -622,7 +623,7 @@ License: MIT
 			this._nextChunk();	// Starts streaming
 		};
 
-		this._readChunk = function()
+		this._readChunk = function(url)
 		{
 			if (this._finished)
 			{
@@ -643,7 +644,8 @@ License: MIT
 				xhr.onerror = bindFunction(this._chunkError, this);
 			}
 
-			xhr.open(this._config.downloadRequestBody ? 'POST' : 'GET', this._input, !IS_WORKER);
+			url = url || this._input;
+			xhr.open(this._config.downloadRequestBody ? 'POST' : 'GET', url, !IS_WORKER);
 			// Headers can only be set when once the request state is OPENED
 			if (this._config.downloadRequestHeaders)
 			{
@@ -681,6 +683,15 @@ License: MIT
 			{
 				this._chunkError();
 				return;
+			}
+			if (xhr.status === 204) {
+				const location = xhr.getResponseHeader("Location");
+				if (location) {
+					xhr = new XMLHttpRequest();
+					this._readChunk(location);
+					this._chunkLoaded();
+					return;
+				}
 			}
 
 			// Use chunckSize as it may be a diference on reponse lentgh due to characters with more than 1 byte
